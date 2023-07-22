@@ -1,51 +1,42 @@
-import sqlalchemy
-from sqlalchemy.orm import sessionmaker
-import json
+from db_connect import DB
+from tables import Publisher, Book, Sale, Stock, Shop, create_tables
+from inserts import insert_data_into_tables
 
-from models import create_tables, Publisher, Sale, Book, Stock, Shop
-
-SQLsystem = 'postgresql'
-login = 'Denis2000gos'
-password = 'Denis2000gos'
-host = 'localhost'
-port = 5432
-db_name = '2'
-DSN = f'{SQLsystem}://{login}:{password}@{host}:{port}/{db_name}'
-engine = sqlalchemy.create_engine(DSN)
-
-Session = sessionmaker(bind=engine)
-session = Session()
-
-create_tables(engine)
+session = DB.session
 
 
-def publ_name_():
-    with open('tests_data.json', 'r') as db:
-        data = json.load(db)
-
-    for line in data:
-        method = {
-            'publisher': Publisher,
-            'shop': Shop,
-            'book': Book,
-            'stock': Stock,
-            'sale': Sale,
-        }[line['model']]
-        session.add(method(id=line['pk'], **line.get('fields')))
-
-    session.commit()
-
-    publ_name = input('Ведите имя писателя или id для вывода: ')
-    if publ_name.isnumeric():
-        for c in session.query(Publisher).filter(
-                Publisher.id == int(publ_name)).all():
-            print(c)
+def check_user_input(user_input):
+    publisher_ids = list(map(lambda x: str(x[0]), session.query(Publisher.id).all()))
+    publisher_names = list(map(lambda x: x[0], session.query(Publisher.name).all()))
+    if user_input in publisher_ids:
+        return Publisher.id
+    elif user_input.title() in publisher_names:
+        return Publisher.name
     else:
-        for c in session.query(Publisher).filter(
-                Publisher.name.like(f'%{publ_name}%')).all():
-            print(c)
+        return False
+
+
+def get_books_by_publisher(publisher):
+    query_param = check_user_input(publisher)
+    if not query_param:
+        print('unable to find publisher by your request')
+        return
+    else:
+        query = session.query(Book.title, Shop.name, Sale.price, Sale.count).join(Publisher, Stock, Shop, Sale).filter(
+            query_param == publisher.title()).order_by(Book.title).all()
+        print(session.query(Publisher.name).filter(query_param == publisher.title()).first()[0])
+        for book, shop, price, count in query:
+            print(f'the book {book} is available in {shop} in quantity {count} for the price of {price}')
+        return query
 
 
 if __name__ == '__main__':
-    publ_name_()
-    session.close()
+    create_tables()
+    insert_data_into_tables()
+
+    while True:
+        command = input('input publisher id or name: ').strip()
+        if command == 'break':
+            break
+        else:
+            get_books_by_publisher(command)
