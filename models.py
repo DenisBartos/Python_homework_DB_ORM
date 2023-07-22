@@ -1,65 +1,58 @@
-import sqlalchemy as sq
-from sqlalchemy.orm import declarative_base, relationship
+import json
 
-Base = declarative_base()
+from db_connect import DB
+from tables import Publisher, Book, Sale, Stock, Shop
 
-
-class Publisher(Base):
-    __table_name__ = "publisher"
-
-    id = sq.Column(sq.Integer, primary_key=True)
-    name = sq.Column(sq.String(length=40), unique=True)
-
-    book = relationship("Book", back_populates="publisher")
-
-    def __str__(self):
-        return f'{self.id}: {self.name}'
+session = DB.session
 
 
-class Book(Base):
-    __table_name__ = "book"
+def insert_data_into_tables():
+    with open("fixtures/test_data.json", 'r') as f:
+        data = json.load(f)
 
-    id = sq.Column(sq.Integer, primary_key=True)
-    title = sq.Column(sq.String(length=40), unique=True)
-    id_publisher = sq.Column(sq.Integer, sq.ForeignKey("publisher.id"), nullable=False)
+    publishers = ({'id': i['pk'], 'fields': i['fields']} for i in data if i['model'] == 'publisher')
+    books = ({'id': i['pk'], 'fields': i['fields']} for i in data if i['model'] == 'book')
+    shops = ({'id': i['pk'], 'fields': i['fields']} for i in data if i['model'] == 'shop')
+    stocks = ({'id': i['pk'], 'fields': i['fields']} for i in data if i['model'] == 'stock')
+    sales = ({'id': i['pk'], 'fields': i['fields']} for i in data if i['model'] == 'sale')
 
-    publisher = relationship(Publisher, back_populates="book")
-    stock2 = relationship("Stock", back_populates="book2")
+    for publisher in publishers:
+        add_record = Publisher(id=publisher['id'],
+                               name=publisher['fields']['name']
+                               )
+        session.add(add_record)
+        session.commit()
 
+    for book in books:
+        add_record = Book(id=book['id'],
+                          title=book['fields']['title'],
+                          id_publisher=book['fields']['publisher']
+                          )
+        session.add(add_record)
+        session.commit()
 
-class Shop(Base):
-    __table__ = "shop"
-    id = sq.Column(sq.Integer, primary_key=True)
-    name = sq.Column(sq.String(length=40), unique=True)
+    for shop in shops:
+        add_record = Shop(id=shop['id'],
+                          name=shop['fields']['name']
+                          )
+        session.add(add_record)
+        session.commit()
 
-    stock = relationship("Stock", back_populates="shop")
+    for stock in stocks:
+        add_record = Stock(id=stock['id'],
+                           id_book=stock['fields']['book'],
+                           id_shop=stock['fields']['shop'],
+                           count=stock['fields']['count']
+                           )
+        session.add(add_record)
+        session.commit()
 
-
-class Stock(Base):
-    __table_name__ = "stock"
-
-    id = sq.Column(sq.Integer, primary_key=True)
-    id_book = sq.Column(sq.Integer, sq.ForeignKey("book.id"), nullable=False)
-    id_shop = sq.Column(sq.Integer, sq.ForeignKey("shop.id"), nullable=False)
-    count = sq.Column(sq.Integer, nullable=False)
-
-    shop = relationship(Shop, back_populates="stock")
-    book2 = relationship(Book, back_populates="stock2")
-    sale = relationship("Sale", back_populates="stock3")
-
-
-class Sale(Base):
-    __table_name__ = "sale"
-
-    id = sq.Column(sq.Integer, primary_key=True)
-    price = sq.Column(sq.Float, nullable=False)
-    date_sale = sq.Column(sq.Date, nullable=False)
-    id_stock = sq.Column(sq.Integer, sq.ForeignKey("stock.id"), nullable=False)
-    count = sq.Column(sq.Integer, nullable=False)
-
-    stock3 = relationship(Stock, back_populates="sale")
-
-
-def create_tables(engine):
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
+    for sale in sales:
+        add_record = Sale(id=sale['id'],
+                          price=sale['fields']['price'],
+                          date_sale=sale['fields']['date_sale'],
+                          id_stock=sale['fields']['stock'],
+                          count=sale['fields']['count']
+                          )
+        session.add(add_record)
+        session.commit()
