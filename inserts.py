@@ -7,7 +7,7 @@ session = DB.session
 
 
 def insert_data_into_tables():
-    with open("fixtures/test_data.json", 'r') as f:
+    with open("test_data.json", 'r') as f:
         data = json.load(f)
 
     publishers = ({'id': i['pk'], 'fields': i['fields']} for i in data if i['model'] == 'publisher')
