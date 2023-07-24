@@ -1,7 +1,6 @@
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import json
-
 from models import create_tables
 from login import db_login, db_name, db_pass
 
@@ -18,7 +17,7 @@ def create_db():
 
 
 def read_file():
-    with open("files/tests_data.json", encoding="utf-8") as file:
+    with open("ests_data.json", encoding="utf-8") as file:
         data_from_file = json.load(file)
     return data_from_file
 
