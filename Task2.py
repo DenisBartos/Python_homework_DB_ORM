@@ -1,7 +1,6 @@
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import json
-
 from models import create_tables, Publisher, Book, Shop, Stock, Sale
 from login import db_login, db_name, db_pass
 
@@ -89,7 +88,7 @@ def sale_facts(ask_publisher):
 
 
 def read_file():
-    with open("files/tests_data1.json", encoding="utf-8") as file:
+    with open("tests_data1.json", encoding="utf-8") as file:
         data_from_file = json.load(file)
     return data_from_file
 
